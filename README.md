@@ -17,10 +17,7 @@ flux bootstrap github \
   --token-auth \
   --personal
 (作成時のみ)
-flux create image repository mystok-gcp-flux-prod \                        ─╯
---image=dekabitasp/mystok-gcp-app-prod \
---interval=1m \
---export > ./clusters/my-cluster/mystok-gcp-flux-prod-registry.yaml
+flux create image repository mystok-gcp-flux-dev \\n--image=dekabitasp/mystok-gcp-app-dev \\n--interval=1m \\n--export > ./clusters/my-cluster/mystok-gcp-flux-dev-registry.yaml
 
 (作成時のみ)
 flux create image policy mystok-gcp-flux-prod \                                                                                                             ─╯
