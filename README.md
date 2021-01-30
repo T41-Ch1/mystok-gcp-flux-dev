@@ -30,6 +30,15 @@ flux create image policy mystok-gcp-flux-prod \                                 
 --semver=5.0.x \
 --export > ./clusters/my-cluster/mystok-gcp-flux-prod-policy.yaml    
 
+(作成時のみ)
+flux create image update flux-system \
+--git-repo-ref=flux-system \
+--branch=main \
+--author-name=fluxcdbot \
+--author-email=fluxcdbot@users.noreply.github.com \
+--commit-template="[ci skip] update image" \
+--export > ./clusters/my-cluster/flux-system-automation.yaml
+
 3.
 gcloud compute backend-services update k8s-be-31942--4739945ebad3cc4a --session-affinity=CLIENT_IP --global
 
