@@ -16,6 +16,10 @@ flux bootstrap github \
   --path=clusters/my-cluster \
   --token-auth \
   --personal
+
+(作成時のみ)
+flux create kustomization mystok-gcp-flux-dev \\n  --source=flux-system \\n  --path="." \\n  --prune=true \\n  --validation=client \\n  --interval=5m \\n  --export > ./clusters/my-cluster/mystok-gcp-flux-dev-kustomization.yaml
+
 (作成時のみ)
 flux create image repository mystok-gcp-flux-dev \\n--image=dekabitasp/mystok-gcp-app-dev \\n--interval=1m \\n--export > ./clusters/my-cluster/mystok-gcp-flux-dev-registry.yaml
 
