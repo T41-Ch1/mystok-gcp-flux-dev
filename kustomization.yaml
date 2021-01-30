@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- github.com/T41-Ch1/mystok-gcp-k8s/base?ref=main 
+- github.com/T41-Ch1/mystok-gcp-k8s/base?ref=main
 - sealed
 commonLabels:
   app: mystok-gcp-dev
@@ -23,4 +23,3 @@ images:
 - name: dekabitasp/mystok-gcp-app-dev
   newName: dekabitasp/mystok-gcp-app-dev
   newTag: 20210128-1908 # {"$imagepolicy": "flux-system:mystok-gcp-flux-dev:tag"}
-
