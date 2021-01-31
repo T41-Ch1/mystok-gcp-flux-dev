@@ -8,6 +8,9 @@ kubesec decrypt kubesec-dev-mystok-gcp-sealedsecret-cert.yaml | k apply -f -
 kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.12.6/controller.yaml
 
 3.
+
+kubernetes current-contextをprod用から変える必要があるかも
+
 flux bootstrap github \
   --components-extra=image-reflector-controller,image-automation-controller \
   --owner=$GITHUB_USER \
@@ -38,6 +41,9 @@ flux create image update flux-system \
 --author-email=fluxcdbot@users.noreply.github.com \
 --commit-template="[ci skip] update image" \
 --export > ./clusters/my-cluster/flux-system-automation.yaml
+
+gcloud config configulations activate でprod用から切り替える必要があるかも
+
 
 3.
 gcloud compute backend-services update k8s-be-31942--4739945ebad3cc4a --session-affinity=CLIENT_IP --global
