@@ -10,6 +10,7 @@ kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/downloa
 3.
 
 kubernetes current-contextをprod用から変える必要があるかも
+k config use-context gke_vertical-reason-166903_us-central1_mystok-gcp-dev-cluster
 
 flux bootstrap github \
   --components-extra=image-reflector-controller,image-automation-controller \
