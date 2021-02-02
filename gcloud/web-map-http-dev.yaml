@@ -1,0 +1,5 @@
+kind: compute#urlMap
+name: web-map-http-dev
+defaultUrlRedirect:
+   redirectResponseCode: MOVED_PERMANENTLY_DEFAULT
+   httpsRedirect: True
