@@ -1,6 +1,6 @@
 # mystok-gcp-flux-dev
 #Caution:
-#devとdevを同時に起動しようとするとバグるので、dev起動次第devを起動する
+#prodとdevを同時に起動しようとするとバグるので、prod起動次第devを起動する
 #gcloud config configulations activateで切り替えが必要かも
 #k config use-context YOUR_CONTEXT_NAMEで障害時に対象クラスタの切り替えが必要かも
 
