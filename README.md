@@ -1,6 +1,6 @@
-# mystok-gcp-flux-prod
+# mystok-gcp-flux-dev
 #Caution:
-#prodとdevを同時に起動しようとするとバグるので、prod起動次第devを起動する
+#devとdevを同時に起動しようとするとバグるので、dev起動次第devを起動する
 #gcloud config configulations activateで切り替えが必要かも
 #k config use-context YOUR_CONTEXT_NAMEで障害時に対象クラスタの切り替えが必要かも
 
@@ -17,7 +17,7 @@ gcloud compute ssl-certificates list
 gcloud compute ssl-certificates delete `gcloud compute ssl-certificates list | awk '{print $1}' | awk 'NR%2!=1'`
 
 @TerraformでGKE等を作成:
-cd mystok-gcp-terraform/prod
+cd mystok-gcp-terraform/dev
 terraform apply
 
 @GKE認証:
@@ -25,32 +25,32 @@ gcloud container clusters get-credentials YOUR_CLUSTERNAME --region YOUR_REGION
 
 @kubesecの鍵、本体、Fluxをk8sにデプロイ
 ./startup
-#kubesec decrypt kubesec-prod-mystok-gcp-sealedsecret-cert.yaml | k apply -f -
+#kubesec decrypt kubesec-dev-mystok-gcp-sealedsecret-cert.yaml | k apply -f -
 #kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.12.6/controller.yaml
 #flux bootstrap github \
   --components-extra=image-reflector-controller,image-automation-controller \
   --owner=$GITHUB_USER \
-  --repository=mystok-gcp-flux-prod \
+  --repository=mystok-gcp-flux-dev \
   --branch=main \
   --path=clusters/my-cluster \
   --token-auth \
   --personal
 
 @(作成時のみ)
-flux create kustomization mystok-gcp-flux-prod \\n  --source=flux-system \\n  --path="." \\n  --prune=true \\n  --validation=client \\n  --interval=5m \\n  --export > ./clusters/my-cluster/mystok-gcp-flux-prod-kustomization.yaml
+flux create kustomization mystok-gcp-flux-dev \\n  --source=flux-system \\n  --path="." \\n  --prune=true \\n  --validation=client \\n  --interval=5m \\n  --export > ./clusters/my-cluster/mystok-gcp-flux-dev-kustomization.yaml
 
 @(作成時のみ)
-flux create image repository mystok-gcp-flux-prod \                        ─╯
---image=dekabitasp/mystok-gcp-app-prod \
+flux create image repository mystok-gcp-flux-dev \                        ─╯
+--image=dekabitasp/mystok-gcp-app-dev \
 --interval=1m \
---export > ./clusters/my-cluster/mystok-gcp-flux-prod-registry.yaml
+--export > ./clusters/my-cluster/mystok-gcp-flux-dev-registry.yaml
 
 @(作成時のみ)
-flux create image policy mystok-gcp-flux-prod \                                                                                                             ─╯
---image-ref=mystok-gcp-flux-prod \
+flux create image policy mystok-gcp-flux-dev \                                                                                                             ─╯
+--image-ref=mystok-gcp-flux-dev \
 --interval=1m \
 --semver=5.0.x \
---export > ./clusters/my-cluster/mystok-gcp-flux-prod-policy.yaml
+--export > ./clusters/my-cluster/mystok-gcp-flux-dev-policy.yaml
 
 @You should modify manifest to disable semver and enable alphabetical order
 
@@ -66,10 +66,10 @@ gcloud compute backend-services update YOUR_SECOND_BACKEND --session-affinity=CL
 
 @Enable HTTP Redirect:
 
-cd mystok-gcp-flux-prod
+cd mystok-gcp-flux-dev
 ./httpRedirect
-#gcloud compute url-maps import web-map-http-prod --source ./gcloud/web-map-http-prod.yaml --global
-#gcloud compute target-http-proxies create http-lb-proxy-prod --url-map=web-map-http-prod --global
-#gcloud compute forwarding-rules create http-content-rule-prod --address=mystok-gcp-ip-prod --global --target-http-proxy=http-lb-proxy-prod --ports=80
+#gcloud compute url-maps import web-map-http-dev --source ./gcloud/web-map-http-dev.yaml --global
+#gcloud compute target-http-proxies create http-lb-proxy-dev --url-map=web-map-http-dev --global
+#gcloud compute forwarding-rules create http-content-rule-dev --address=mystok-gcp-ip-dev --global --target-http-proxy=http-lb-proxy-dev --ports=80
 gcp consoleでPrefix_Redirect=>Full_Path_Redirectに変更
 
