@@ -1,71 +1,75 @@
-# mystok-gcp-flux-dev
+# mystok-gcp-flux-prod
+#Caution:
+#prodとdevを同時に起動しようとするとバグるので、prod起動次第devを起動する
+#gcloud config configulations activateで切り替えが必要かも
+#k config use-context YOUR_CONTEXT_NAMEで障害時に対象クラスタの切り替えが必要かも
+
 起動手順:
 
-1.
-kubesec decrypt kubesec-dev-mystok-gcp-sealedsecret-cert.yaml | k apply -f -
+@前回起動したLBの削除確認&削除:
+gcp consoleで行う
 
-2.
-kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.12.6/controller.yaml
+@NEGが溜まってないか確認&削除:
+gcp consoleで行う
 
-3.
+@mrtが溜まってないか確認&削除:
+gcloud compute ssl-certificates list
+gcloud compute ssl-certificates delete `gcloud compute ssl-certificates list | awk '{print $1}' | awk 'NR%2!=1'`
 
-kubernetes current-contextをprod用から変える必要があるかも
-k config use-context gke_vertical-reason-166903_us-central1_mystok-gcp-dev-cluster
+@TerraformでGKE等を作成:
+cd mystok-gcp-terraform/prod
+terraform apply
 
-flux bootstrap github \
+@GKE認証:
+gcloud container clusters get-credentials YOUR_CLUSTERNAME --region YOUR_REGION
+
+@kubesecの鍵、本体、Fluxをk8sにデプロイ
+./startup
+#kubesec decrypt kubesec-prod-mystok-gcp-sealedsecret-cert.yaml | k apply -f -
+#kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.12.6/controller.yaml
+#flux bootstrap github \
   --components-extra=image-reflector-controller,image-automation-controller \
   --owner=$GITHUB_USER \
-  --repository=mystok-gcp-flux-dev \
+  --repository=mystok-gcp-flux-prod \
   --branch=main \
   --path=clusters/my-cluster \
   --token-auth \
   --personal
 
-(作成時のみ)
-flux create kustomization mystok-gcp-flux-dev \\n  --source=flux-system \\n  --path="." \\n  --prune=true \\n  --validation=client \\n  --interval=5m \\n  --export > ./clusters/my-cluster/mystok-gcp-flux-dev-kustomization.yaml
+@(作成時のみ)
+flux create kustomization mystok-gcp-flux-prod \\n  --source=flux-system \\n  --path="." \\n  --prune=true \\n  --validation=client \\n  --interval=5m \\n  --export > ./clusters/my-cluster/mystok-gcp-flux-prod-kustomization.yaml
 
-(作成時のみ)
-flux create image repository mystok-gcp-flux-dev \\n--image=dekabitasp/mystok-gcp-app-dev \\n--interval=1m \\n--export > ./clusters/my-cluster/mystok-gcp-flux-dev-registry.yaml
+@(作成時のみ)
+flux create image repository mystok-gcp-flux-prod \                        ─╯
+--image=dekabitasp/mystok-gcp-app-prod \
+--interval=1m \
+--export > ./clusters/my-cluster/mystok-gcp-flux-prod-registry.yaml
 
-(作成時のみ)
+@(作成時のみ)
 flux create image policy mystok-gcp-flux-prod \                                                                                                             ─╯
 --image-ref=mystok-gcp-flux-prod \
 --interval=1m \
 --semver=5.0.x \
---export > ./clusters/my-cluster/mystok-gcp-flux-prod-policy.yaml    
+--export > ./clusters/my-cluster/mystok-gcp-flux-prod-policy.yaml
 
-(作成時のみ)
-flux create image update flux-system \
---git-repo-ref=flux-system \
---branch=main \
---author-name=fluxcdbot \
---author-email=fluxcdbot@users.noreply.github.com \
---commit-template="[ci skip] update image" \
---export > ./clusters/my-cluster/flux-system-automation.yaml
+@You should modify manifest to disable semver and enable alphabetical order
 
-gcloud config configulations activate でprod用から切り替える必要があるかも
+ 
+@mcrt,ingressがエラー吐いてないかチェック
+k get mcrt
+k get ing
 
+@Enable Session Affinity:
+gcloud compute backend-services list
+gcloud compute backend-services update YOUR_FIRST_BACKEND --session-affinity=CLIENT_IP --global
+gcloud compute backend-services update YOUR_SECOND_BACKEND --session-affinity=CLIENT_IP --global
 
-3.
-gcloud compute backend-services update k8s-be-31942--4739945ebad3cc4a --session-affinity=CLIENT_IP --global
+@Enable HTTP Redirect:
 
-4.
-gcloud compute backend-services update k8s1-4739945e-default-mystok-app-80-34f883e2 --session-affinity=CLIENT_IP --global
+cd mystok-gcp-flux-prod
+./httpRedirect
+#gcloud compute url-maps import web-map-http-prod --source ./gcloud/web-map-http-prod.yaml --global
+#gcloud compute target-http-proxies create http-lb-proxy-prod --url-map=web-map-http-prod --global
+#gcloud compute forwarding-rules create http-content-rule-prod --address=mystok-gcp-ip-prod --global --target-http-proxy=http-lb-proxy-prod --ports=80
+gcp consoleでPrefix_Redirect=>Full_Path_Redirectに変更
 
-5.
-gcloud compute url-maps import web-map-http-dev --source ./gcloud/web-map-http-dev.yaml --global
-
-6.
- gcloud compute target-http-proxies create http-lb-proxy-dev --url-map=web-map-http-dev --global
-
-7.
-gcloud compute forwarding-rules create http-content-rule-dev --address=mystok-gcp-ip-dev --global --target-http-proxy=http-lb-proxy-dev --ports=80
-
-8.
-gcloud consoleで操作
-
-※Httpsリダイレクト用のLoadBalancerは毎回terraformとは別に削除しないとアカン
-####################
-To Delete All mcrt
-
-gcloud compute ssl-certificates delete `gcloud compute ssl-certificates list | awk '{print $1}' | awk 'NR%2!=1'`
